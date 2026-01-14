@@ -1,0 +1,25 @@
+# Source files
+src/
+test/
+benchmarks/
+examples/
+
+# Configuration
+tsconfig.json
+jest.config.js
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Build artifacts
+build/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+
+# Specs
+.kiro/
