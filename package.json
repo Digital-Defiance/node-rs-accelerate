@@ -1,6 +1,6 @@
 {
   "name": "@digitaldefiance/node-rs-accelerate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "High-performance Reed-Solomon error correction library optimized for Apple Silicon",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,6 +19,7 @@
     "test:memory:heap": "./scripts/test-memory-leaks.sh --heap",
     "test:memory:asan-only": "./scripts/test-memory-leaks.sh --asan-only",
     "benchmark": "node benchmarks/run.js",
+    "publish:public": "npm publish --access public",
     "prepare": "yarn build"
   },
   "keywords": [
@@ -55,6 +56,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/digitaldefiance/node-rs-accelerate.git"
+    "url": "https://github.com/digital-defiance/node-rs-accelerate.git"
   }
 }
