@@ -1,8 +1,14 @@
 /**
- * Apple Accelerate Framework optimized Galois Field operations
+ * Cache- and NEON-optimized Galois Field operations
  * 
- * This module uses Apple's Accelerate framework (vDSP) for memory-bandwidth
- * operations and combines it with NEON SIMD for GF-specific arithmetic.
+ * Despite the "Accelerate" name, this module does not call into Apple's
+ * Accelerate framework. vDSP has no XOR primitive and no uint8 GF
+ * multiplication, so every kernel here is hand-written NEON (veorq_u8 /
+ * vst1q_u8) over precomputed lookup tables. See the note at
+ * gf_arithmetic.cc:mulVec8Accelerated for the same reasoning.
+ *
+ * The name is kept for API compatibility: "Accelerated" here means
+ * "table-driven + NEON + cache-blocked", not "vDSP".
  * 
  * Key optimizations:
  * 1. Cache-optimized matrix operations using tiled/blocked algorithms
@@ -79,10 +85,10 @@ namespace GF_Accelerate {
                           size_t shardSize);
     
     /**
-     * XOR operation using Accelerate framework
+     * Memory-bandwidth-limited XOR
      * 
-     * Uses vDSP for memory-bandwidth-limited XOR operations.
-     * Processes data in cache-friendly chunks.
+     * Implemented with NEON (veorq_u8) over cache-friendly chunks; vDSP has no
+     * XOR primitive.
      */
     void xorAccelerate(const uint8_t* a, const uint8_t* b, uint8_t* out, size_t len);
     

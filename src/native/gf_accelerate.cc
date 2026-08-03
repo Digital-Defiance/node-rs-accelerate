@@ -38,6 +38,8 @@
 #include <algorithm>
 
 #ifdef __APPLE__
+// Included for platform types only. No vDSP/BLAS routine is called from this
+// translation unit; the kernels below are NEON.
 #include <Accelerate/Accelerate.h>
 #endif
 
@@ -102,8 +104,8 @@ bool isAccelerateAvailable() {
 /**
  * XOR operation optimized for Apple Silicon
  * 
- * Uses NEON SIMD to process 64 bytes per iteration.
- * Falls back to Accelerate vDSP for very large arrays.
+ * Uses NEON SIMD to process 64 bytes per iteration, with a scalar tail.
+ * There is no vDSP fallback - vDSP has no XOR primitive.
  */
 void xorAccelerate(const uint8_t* a, const uint8_t* b, uint8_t* out, size_t len) {
 #ifdef __ARM_NEON

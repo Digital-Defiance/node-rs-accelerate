@@ -6,12 +6,86 @@
 #include <stdexcept>
 #include <memory>
 #include <cstdlib>
+#include <sstream>
 
 #ifdef __APPLE__
 #include <Accelerate/Accelerate.h>
 #endif
 
 namespace GF {
+  namespace {
+    /**
+     * Multiplicative order of the generator α = 2 in GF(2^m) under `poly`.
+     *
+     * Walks the same power sequence the antilog table is built from and returns
+     * the first exponent i >= 1 with α^i == 1. `overflowBit` is 1 << m and
+     * `groupOrder` is 2^m - 1. Returns 0 if the sequence never returns to 1
+     * within groupOrder steps (which happens when `poly` has no constant term,
+     * so α is not even a unit).
+     */
+    uint32_t alphaOrder(uint32_t poly, uint32_t overflowBit, uint32_t groupOrder) {
+      uint32_t x = 1;
+      for (uint32_t i = 1; i <= groupOrder; i++) {
+        x <<= 1;
+        if (x & overflowBit) {
+          x ^= poly;
+        }
+        if (x == 1) {
+          return i;
+        }
+      }
+      return 0;
+    }
+
+    /**
+     * Rejects any polynomial that would produce a corrupt log/antilog table.
+     *
+     * Two things have to hold before the tables are built:
+     *
+     *  1. `poly` has degree exactly m, i.e. bit m is set and nothing above it.
+     *     The table builder reduces with a single `if (x & 1 << m)` test, which
+     *     only keeps x inside m bits when that is true.
+     *  2. α = 2 has multiplicative order exactly 2^m - 1, i.e. `poly` is
+     *     primitive and not merely irreducible. If the order is shorter the
+     *     antilog table wraps early and most of the log table is never
+     *     written, leaving the field silently computing wrong products.
+     *
+     * Throws std::invalid_argument on failure; the addon boundary turns that
+     * into a thrown JS Error.
+     */
+    void requirePrimitivePolynomial(uint32_t poly, uint32_t m) {
+      const uint32_t overflowBit = 1u << m;
+      const uint32_t groupOrder = overflowBit - 1u;
+
+      if ((poly >> m) != 1u) {
+        std::ostringstream msg;
+        msg << "Invalid primitive polynomial 0x" << std::hex << std::uppercase << poly
+            << ": expected degree " << std::dec << m
+            << " (bit " << m << " set and no higher bits), i.e. a value in [0x"
+            << std::hex << std::uppercase << overflowBit << ", 0x"
+            << ((overflowBit << 1) - 1u) << "]";
+        throw std::invalid_argument(msg.str());
+      }
+
+      const uint32_t order = alphaOrder(poly, overflowBit, groupOrder);
+      if (order != groupOrder) {
+        std::ostringstream msg;
+        msg << "Polynomial 0x" << std::hex << std::uppercase << poly
+            << " is not primitive for GF(2^" << std::dec << m
+            << "): the generator alpha = 2 has multiplicative order ";
+        if (order == 0) {
+          msg << "0 (alpha is not a unit; the polynomial has no constant term)";
+        } else {
+          msg << order;
+        }
+        msg << ", but " << groupOrder << " is required. "
+            << "A non-primitive polynomial would leave the logarithm table "
+            << "mostly uninitialized and silently corrupt every product.";
+        throw std::invalid_argument(msg.str());
+      }
+    }
+  }
+
   // GF(2^8) lookup tables - cached after initialization
   // Default primitive polynomial: 0x11D (x^8 + x^4 + x^3 + x^2 + 1)
   static uint8_t gf256_log[256] = {0};      // Logarithm table
@@ -46,6 +120,10 @@ namespace GF {
   }
   
   void initGF256WithPolynomial(uint16_t primitivePolynomial) {
+    // Validate before touching any state, so a rejected polynomial always
+    // throws regardless of what was initialized previously.
+    requirePrimitivePolynomial(primitivePolynomial, 8);
+
     // If already initialized with the same polynomial, skip
     if (gf256_initialized && gf256_current_polynomial == primitivePolynomial) {
       return;
@@ -89,6 +167,11 @@ namespace GF {
   }
   
   void initGF65536WithPolynomial(uint32_t primitivePolynomial) {
+    // Validate before touching any state (including before allocating the
+    // 64K tables), so a rejected polynomial always throws and never leaves a
+    // half-built field behind.
+    requirePrimitivePolynomial(primitivePolynomial, 16);
+
     // If already initialized with the same polynomial, skip
     if (gf65536_initialized && gf65536_current_polynomial == primitivePolynomial) {
       return;

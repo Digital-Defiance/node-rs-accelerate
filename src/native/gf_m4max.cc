@@ -3,7 +3,7 @@
  * 
  * Pushes Apple Silicon M4 Max to absolute limits:
  * 
- * 1. SME Matrix Extension - Native matrix coprocessor
+ * 1. Wide NEON Table Lookup - no SME is used anywhere in this file
  * 2. 16 P-Core Saturation - Full core utilization
  * 3. 4/8-Way Unrolled Accumulation - Maximum ILP
  * 4. RAX1 + veor3 - 4-way XOR operations
@@ -98,9 +98,13 @@ void initM4Max() {
 }
 
 bool isSMEAvailable() {
-    // SME detection - check for M4 or later
-    // Currently SME is not exposed via standard ARM feature macros on macOS
-    // We detect M4 by checking for specific CPU features
+    // Hardware capability predicate only - see gf_m4max.h for the contract.
+    // A true result means "this is an M4-class chip, which has SME". It does
+    // not mean this library uses SME; no kernel here does.
+    //
+    // macOS exposes no SME feature flag through the standard ARM feature
+    // macros or sysctl, so we match the CPU brand string and lean on the fact
+    // that every M4 variant ships SME.
 #ifdef __APPLE__
     char cpu_brand[256] = {0};
     size_t size = sizeof(cpu_brand);

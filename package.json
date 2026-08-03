@@ -4,8 +4,17 @@
   "description": "High-performance Reed-Solomon error correction library optimized for Apple Silicon",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "gypfile": true,
+  "files": [
+    "dist",
+    "src",
+    "binding.gyp",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "yarn build:native && yarn build:ts",
+    "install": "node-gyp rebuild",
+    "build": "npm run build:native && npm run build:ts",
     "build:native": "node-gyp rebuild",
     "build:asan": "node-gyp rebuild --binding=binding.asan.gyp",
     "build:ts": "tsc",
@@ -20,7 +29,7 @@
     "test:memory:asan-only": "./scripts/test-memory-leaks.sh --asan-only",
     "benchmark": "node benchmarks/run.js",
     "publish:public": "npm publish --access public",
-    "prepare": "yarn build"
+    "prepare": "npm run build:ts"
   },
   "keywords": [
     "reed-solomon",

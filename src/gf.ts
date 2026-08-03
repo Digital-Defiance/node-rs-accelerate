@@ -14,7 +14,15 @@ export function initGF256(): void {
 
 /**
  * Initialize GF(2^8) lookup tables with custom primitive polynomial
+ *
+ * The polynomial must have degree exactly 8 (a value in [0x100, 0x1FF]) and
+ * must be primitive: the generator alpha = 2 must have multiplicative order
+ * exactly 255. Both are verified before the tables are built.
+ *
  * @param primitivePolynomial - The primitive polynomial to use (e.g., 0x11D, 0x187, 0x171)
+ * @throws Error if the polynomial is not a degree-8 primitive polynomial.
+ *         Note that 0x11B, the AES polynomial, is irreducible but *not*
+ *         primitive (alpha has order 51) and is rejected.
  */
 export function initGF256WithPolynomial(primitivePolynomial: number): void {
   addon.initGFWithPolynomial(primitivePolynomial);
@@ -29,7 +37,13 @@ export function initGF65536(): void {
 
 /**
  * Initialize GF(2^16) lookup tables with custom primitive polynomial
+ *
+ * The polynomial must have degree exactly 16 (a value in [0x10000, 0x1FFFF])
+ * and must be primitive: the generator alpha = 2 must have multiplicative
+ * order exactly 65535. Both are verified before the tables are built.
+ *
  * @param primitivePolynomial - The primitive polynomial to use (e.g., 0x1100B, 0x1002D)
+ * @throws Error if the polynomial is not a degree-16 primitive polynomial
  */
 export function initGF65536WithPolynomial(primitivePolynomial: number): void {
   addon.initGF65536WithPolynomial(primitivePolynomial);

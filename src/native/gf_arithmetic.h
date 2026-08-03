@@ -12,8 +12,17 @@
 namespace GF {
   // Initialize lookup tables
   void initGF256();
-  void initGF256WithPolynomial(uint16_t primitivePolynomial);
   void initGF65536();
+
+  // Initialize lookup tables with a caller-supplied field polynomial.
+  //
+  // The polynomial must have degree exactly m (8 or 16) and must be primitive:
+  // the generator alpha = 2 must have multiplicative order exactly 2^m - 1.
+  // Both conditions are checked before any table is built; a polynomial that
+  // fails either throws std::invalid_argument and leaves the current field
+  // untouched. (A merely irreducible polynomial such as 0x11B, the AES
+  // polynomial, gives alpha order 51 and would silently corrupt the tables.)
+  void initGF256WithPolynomial(uint16_t primitivePolynomial);
   void initGF65536WithPolynomial(uint32_t primitivePolynomial);
   void cleanupGF65536(); // Cleanup GF(2^16) tables (called automatically on exit)
   

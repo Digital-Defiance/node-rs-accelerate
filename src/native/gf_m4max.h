@@ -3,10 +3,12 @@
  * 
  * This file implements M4 Max-specific hardware exploitation:
  * 
- * 1. SME (Scalable Matrix Extension) - M4's matrix coprocessor
- *    - Native matrix outer products
- *    - 512-bit streaming vectors
- *    - 16x16 matrix tiles per cycle
+ * 1. Wide NEON Table Lookup
+ *    - 128-bit NEON vectors via vqtbl/veor intrinsics
+ *    - Matrix work is expressed as blocked NEON table lookups, not as
+ *      coprocessor matrix ops
+ *    - NOTE: this module contains no SME (Scalable Matrix Extension) code.
+ *      isSMEAvailable() reports whether the CPU has SME; nothing here uses it.
  * 
  * 2. 16 P-Core Saturation
  *    - Full utilization of all performance cores
@@ -42,8 +44,17 @@ namespace GF_M4Max {
 void initM4Max();
 
 /**
- * Check if SME (Scalable Matrix Extension) is available
- * Only available on M4 and later
+ * Check whether the host CPU is expected to have SME (Scalable Matrix
+ * Extension), which on Apple Silicon means M4 or later.
+ *
+ * Contract: this is a *hardware capability predicate only*. macOS does not
+ * expose an SME feature flag through the usual ARM feature macros or sysctl
+ * keys, so the check is a CPU brand-string match on "M4" and relies on the
+ * fact that every M4 variant ships SME.
+ *
+ * It does NOT indicate that any code path in this library uses SME - none
+ * does. All kernels here are NEON. Treat a true result as "the machine is an
+ * M4-class chip", nothing more.
  */
 bool isSMEAvailable();
 
